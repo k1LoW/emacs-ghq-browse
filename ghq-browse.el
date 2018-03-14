@@ -45,7 +45,7 @@
   "Open url by browser using ghq path style."
   (interactive)
   (let* ((root (expand-file-name (ghq-browse/project-root)))
-         (repo (f-relative root (f-dirname (f-dirname (f-dirname (expand-file-name (ghq-browse-on-web--project-root)))))))
+         (repo (f-relative root (f-dirname (f-dirname (f-dirname root)))))
          (file (f-relative (expand-file-name (buffer-file-name)) root))
          (hash (concat "#L" (number-to-string (line-number-at-pos)))))
     (when (use-region-p)
