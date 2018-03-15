@@ -4,7 +4,7 @@
 
 ;; Author: k1LoW (Ken'ichiro OYAMA), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: https://github.com/k1LoW/emacs-ghq-browse
-;; Version: 0.2.0
+;; Version: 0.2.1
 ;; Package-Requires: ((f "0.20.0"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -41,9 +41,8 @@
            when (locate-dominating-file default-directory dir)
            return it))
 
-(defun ghq-browse ()
-  "Open url by browser using ghq path style."
-  (interactive)
+(defun ghq-browse/url ()
+  "Get code URL."
   (let* ((root (expand-file-name (ghq-browse/project-root)))
          (repo (f-relative root (f-dirname (f-dirname (f-dirname (expand-file-name (ghq-browse/project-root)))))))
          (branch (replace-regexp-in-string
@@ -60,8 +59,12 @@
              (start (min mark-line point-line))
              (end (max mark-line point-line)))
         (setq hash (concat "#L" (number-to-string start) "-L" (number-to-string end)))))
-    (setq url (concat "https://" repo "blob/" branch "/" file hash))
-    (browse-url url)))
+    (concat "https://" repo "blob/" branch "/" file hash)))
+
+(defun ghq-browse ()
+  "Open url by browser using ghq path style."
+  (interactive)
+    (browse-url (ghq-browse/url)))
 
 (provide 'ghq-browse)
 
