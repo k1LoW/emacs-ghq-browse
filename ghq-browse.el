@@ -4,7 +4,7 @@
 
 ;; Author: k1LoW (Ken'ichiro OYAMA), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: https://github.com/k1LoW/emacs-ghq-browse
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((f "0.20.0"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -46,6 +46,11 @@
   (interactive)
   (let* ((root (expand-file-name (ghq-browse/project-root)))
          (repo (f-relative root (f-dirname (f-dirname (f-dirname (expand-file-name (ghq-browse/project-root)))))))
+         (branch (replace-regexp-in-string
+                  "refs/[^\/]*/" ""
+                  (replace-regexp-in-string
+                   "[\r\n]+\\'" ""
+                   (shell-command-to-string "git symbolic-ref -q HEAD"))))
          (file (f-relative (expand-file-name (buffer-file-name)) root))
          (url "")
          (hash (concat "#L" (number-to-string (line-number-at-pos)))))
@@ -55,7 +60,7 @@
              (start (min mark-line point-line))
              (end (max mark-line point-line)))
         (setq hash (concat "#L" (number-to-string start) "-L" (number-to-string end)))))
-    (setq url (concat "https://" repo "blob/master/" file hash))
+    (setq url (concat "https://" repo "blob/" branch "/" file hash))
     (browse-url url)))
 
 (provide 'ghq-browse)
