@@ -1,4 +1,4 @@
-;;; ghq-browse.el --- Open url by browser using ghq path style.
+;;; ghq-browse.el --- Open repo url in browser.
 
 ;; Copyright (C) 2019 101000code/101000LAB
 
@@ -35,31 +35,64 @@
 
 (require 'f)
 
+(defvar ghq-browse/remote-alist
+  '(("go.googlesource.com" ghq-browse/gocode-url)))
+
 (defun ghq-browse/project-root ()
   "Get project root."
   (cl-loop for dir in '(".git/" ".git")
            when (locate-dominating-file default-directory dir)
            return it))
 
+(defun ghq-browse/repo ()
+  "Get ghq repogitory."
+  (replace-regexp-in-string
+   "\\(?:https://\\|git@\\)\\([^:/]+\\)[:/]\\([^.]+\\).*" "\\1/\\2"
+   (replace-regexp-in-string
+    "[\r\n]+\\'" ""
+    (shell-command-to-string "git remote get-url origin"))))
+
+(defun ghq-browse/branch ()
+  "Get ghq repogitory."
+  (replace-regexp-in-string
+   "refs/[^\/]*/" ""
+   (replace-regexp-in-string
+    "[\r\n]+\\'" ""
+    (shell-command-to-string "git symbolic-ref -q HEAD"))))
+
+(defun ghq-browse/default-url (repo branch file start end)
+  "Generate default URL using REPO BRANCH FILE START END."
+  (if end
+      (setq hash (format "L%s-L%s" start end))
+    (setq hash (format "L%s" start)))
+  (format "https://%s/+/%s/%s#%s"
+          repo branch file hash))
+
+(defun ghq-browse/gocode-url (repo branch file start end)
+  "Generate gocode URL using REPO BRANCH FILE START END."
+  (format "https://%s/+/%s/%s#%s"
+          repo branch file start))
+
 (defun ghq-browse/url ()
   "Get code URL."
-  (let* ((root (expand-file-name (ghq-browse/project-root)))
-         (repo (f-relative root (f-dirname (f-dirname (f-dirname (expand-file-name (ghq-browse/project-root)))))))
-         (branch (replace-regexp-in-string
-                  "refs/[^\/]*/" ""
-                  (replace-regexp-in-string
-                   "[\r\n]+\\'" ""
-                   (shell-command-to-string "git symbolic-ref -q HEAD"))))
-         (file (f-relative (expand-file-name (buffer-file-name)) root))
-         (url "")
-         (hash (concat "#L" (number-to-string (line-number-at-pos)))))
+  (let* ((project-root (expand-file-name (ghq-browse/project-root)))
+         (repo (ghq-browse/repo))
+         (branch (ghq-browse/branch))
+         (file (f-relative (expand-file-name (buffer-file-name)) project-root))
+         (start nil)
+         (end nil))
+    (setq start (line-number-at-pos))
     (when (use-region-p)
       (let* ((mark-line (line-number-at-pos (mark)))
-             (point-line (line-number-at-pos (- (point) 1)))
-             (start (min mark-line point-line))
-             (end (max mark-line point-line)))
-        (setq hash (concat "#L" (number-to-string start) "-L" (number-to-string end)))))
-    (concat "https://" repo "blob/" branch "/" file hash)))
+             (point-line (line-number-at-pos (- (point) 1))))
+        (setq start (min mark-line point-line))
+        (setq end (max mark-line point-line))))
+    (setq urlfunc (cadr (cl-find-if (lambda (lst)
+                                      (string-match-p (car lst) repo))
+                                    ghq-browse/remote-alist)))
+    (if urlfunc
+        (funcall urlfunc repo branch file start end)
+        (ghq-browse/default-url repo branch file start end))))
 
 (defun ghq-browse ()
   "Open url by browser using ghq path style."
@@ -69,3 +102,4 @@
 (provide 'ghq-browse)
 
 ;;; ghq-browse.el ends here
+
