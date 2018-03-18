@@ -4,7 +4,7 @@
 
 ;; Author: k1LoW (Ken'ichiro OYAMA), <k1lowxb [at] gmail [dot] com> <k1low [at] 101000lab [dot] org>
 ;; URL: https://github.com/k1LoW/emacs-ghq-browse
-;; Version: 0.2.1
+;; Version: 0.3.0
 ;; Package-Requires: ((f "0.20.0"))
 
 ;; This file is NOT part of GNU Emacs.
